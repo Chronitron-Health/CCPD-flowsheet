@@ -64,17 +64,15 @@ adminUsers <- c("admin", "prof")
 # info for sharing this app on facebook/twitter
 share <- list(
      title = "CCPD Flow Sheet",
-     url = "http://daattali.com/shiny/mimic-google-form/",
-     image = "http://daattali.com/shiny/img/mimic.png",
-     description = "Learn how to create a Shiny app that allows users to submit responses to a form. Submissions get stored permanently and can be loaded back into the app.",
-     twitter_user = "daattali"
+     url = "https://akbaresfahani.shinyapps.io/ccpdFlowsheet/",
+     image = "greenRibbon.jpg"
 )
 
 shinyApp(
      ui = fluidPage(
           shinyjs::useShinyjs(),
           shinyjs::inlineCSS(appCSS),
-          title = "Mimicking a Google Form with a Shiny app",
+          title = "CCPD Flow Sheet",
           tags$head(
                tags$link(rel = "shortcut icon", type="image/x-icon", href="http://daattali.com/shiny/img/favicon.ico"),
                
@@ -94,23 +92,23 @@ shinyApp(
                tags$meta(name = "twitter:image", content = share$image)
           ),
           tags$a(
-               href="https://github.com/daattali/shiny-server/tree/master/mimic-google-form",
+               href="https://github.com/aakbarie/CCPD-flowsheet",
                tags$img(style="position: absolute; top: 0; right: 0; border: 0;",
                         src="github-green-right.png",
                         alt="Fork me on GitHub")
           ),
           div(id = "header",
-              h1("Mimicking a Google Form with a Shiny app"),
-              h4("This app is a supplement to my",
+              h1("CCPD Flow Sheet"),
+              h4("This app is based on",
                  a(href = "http://deanattali.com/2015/06/14/mimicking-google-form-shiny/",
                    "blog post on the topic")
               ),
               strong( 
                    span("Created by "),
-                   a("Dean Attali", href = "http://deanattali.com"),
+                   a("Akbar Akbari Esfahai", href = "http://akbarakbariesfahani.com"),
                    HTML("&bull;"),
                    span("Code"),
-                   a("on GitHub", href = "https://github.com/daattali/shiny-server/tree/master/mimic-google-form"),
+                   a("on GitHub", href = "https://github.com/aakbarie/CCPD-flowsheet"),
                    HTML("&bull;"),
                    a("More apps", href = "http://daattali.com/shiny/"), "by Dean")
           ),
