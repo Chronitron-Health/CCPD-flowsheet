@@ -1,11 +1,11 @@
 library(shiny)
 
 # which fields get saved 
-fieldsAll <- c("name", "date", "temp", "bpam", "bpm", "perc", "meds", "dose", "indrain", "totUF",
+fieldsAll <- c("name", "date", "weight", "temp", "bpam", "bpm", "perc", "meds", "dose", "indrain", "totUF",
                "avgDwell", "comments")
 
 # which fields are mandatory
-fieldsMandatory <- c("name", "date", "temp", "bpam", "bppm", "perc", "indrain", "totUF", "avgDwell")
+fieldsMandatory <- c("name", "date", "weight", "temp", "bpam", "bppm", "perc", "indrain", "totUF", "avgDwell")
 
 # add an asterisk to an input label
 labelMandatory <- function(label) {
@@ -119,7 +119,8 @@ shinyApp(
                            id = "form",
                            
                            textInput("name", labelMandatory("Name"), ""),
-                           textInput("date", labelMandatory("Today's date")),
+                           textInput("date", labelMandatory("Today's date"), value = Sys.Date()),
+                           textInput("weight", labelMandatory("Weight")),
                            textInput("temp", labelMandatory("Temp")),
                            textInput("bpam", labelMandatory("BP-AM")),
                            textInput("bppm", labelMandatory("BP-PM")),
