@@ -1,0 +1,13 @@
+name: ccpdFlowchart
+title: ccpdFlowchart
+username:
+account: akbaresfahani
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 292036
+bundleId: 1249898
+url: https://akbaresfahani.shinyapps.io/ccpdFlowchart/
+when: 1520033053.61197
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: admin.R
