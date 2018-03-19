@@ -1,12 +1,19 @@
+# add selection based on names
+
+
 
 library(shiny)
 library(shinythemes)
+library(RSQLite)
+library(tidyverse)
+library(highcharter)
+
 # which fields get saved 
-fieldsAll <- c("name", "date", "weight", "temp", "bpam", "bpm", "perc", "meds", "dose", "indrain", "totUF",
+fieldsAll <- c("name", "date", "weight", "temp", "bpsys", "bpdia", "bs", "perc", "meds", "dose", "indrain", "totUF",
                "avgDwell", "comments")
 
 # which fields are mandatory
-fieldsMandatory <- c("name", "date", "weight", "temp", "bpam", "bppm", "perc", "indrain", "totUF", "avgDwell")
+fieldsMandatory <- c("name", "weight", "temp", "bpsys", "bpdia", "bs", "perc", "indrain", "totUF", "avgDwell")
 
 # add an asterisk to an input label
 labelMandatory <- function(label) {
@@ -29,20 +36,21 @@ humanTime <- function() {
 
 # save the results to a file
 saveData <- function(data) {
-     fileName <- sprintf("%s_%s.csv",
-                         humanTime(),
-                         digest::digest(data))
-     
-     write.csv(x = data, file = file.path(responsesDir, fileName),
-               row.names = FALSE, quote = TRUE)
+     con <- dbConnect(SQLite(), dbname="db/ccpdData.sqlite")
+     # data$date <- as.Date(data$date)
+     dbWriteTable(con, "test",as.data.frame(data),
+                  append = TRUE)
+     dbDisconnect(con)
 }
 
 # load all responses into a data.frame
 loadData <- function() {
-     files <- list.files(file.path(responsesDir), full.names = TRUE)
-     data <- lapply(files, read.csv, stringsAsFactors = FALSE)
-     #data <- dplyr::rbind_all(data)
-     data <- do.call(rbind, data)
+     con <- dbConnect(SQLite(), dbname="db/ccpdData.sqlite")
+     data <- dbReadTable(con, "test")
+     dbDisconnect(con)
+     data <- data %>%
+          select(-timestamp) %>%
+          mutate(date = as.Date(date, origin = "1970-01-01"))
      data
 }
 
@@ -86,49 +94,11 @@ shinyServer(function(input, output, session) {
                )
           } else {
                #### Your app's UI code goes here!
-               fluidPage(theme=shinytheme("united"),
+               navbarPage(theme=shinytheme("united"),
+                          title = "CCPD Flow Sheet",
+                          tabPanel("Form",
                     shinyjs::useShinyjs(),
                     shinyjs::inlineCSS(appCSS),
-                    title = "CCPD Flow Sheet",
-                    tags$head(
-                         tags$link(rel = "shortcut icon", type="image/x-icon", href="http://daattali.com/shiny/img/favicon.ico"),
-                         
-                         # Facebook OpenGraph tags
-                         tags$meta(property = "og:title", content = share$title),
-                         tags$meta(property = "og:type", content = "website"),
-                         tags$meta(property = "og:url", content = share$url),
-                         tags$meta(property = "og:image", content = share$image),
-                         tags$meta(property = "og:description", content = share$description),
-                         
-                         # Twitter summary cards
-                         tags$meta(name = "twitter:card", content = "summary"),
-                         tags$meta(name = "twitter:site", content = paste0("@", share$twitter_user)),
-                         tags$meta(name = "twitter:creator", content = paste0("@", share$twitter_user)),
-                         tags$meta(name = "twitter:title", content = share$title),
-                         tags$meta(name = "twitter:description", content = share$description),
-                         tags$meta(name = "twitter:image", content = share$image)
-                    ),
-                    tags$a(
-                         href="https://github.com/aakbarie/CCPD-flowsheet",
-                         tags$img(style="position: absolute; top: 0; right: 0; border: 0;",
-                                  src="github-green-right.png",
-                                  alt="Fork me on GitHub")
-                    ),
-                    div(id = "header",
-                        h1("CCPD Flow Sheet"),
-                        h4("This app is based on",
-                           a(href = "http://deanattali.com/2015/06/14/mimicking-google-form-shiny/",
-                             "blog post on the topic")
-                        ),
-                        strong( 
-                             span("Created by "),
-                             a("Akbar Akbari Esfahai", href = "http://akbarakbariesfahani.com"),
-                             HTML("&bull;"),
-                             span("Code"),
-                             a("on GitHub", href = "https://github.com/aakbarie/CCPD-flowsheet"),
-                             HTML("&bull;"),
-                             a("More apps", href = "http://daattali.com/shiny/"), "by Dean")
-                    ),
                     
                     fluidRow(
                          column(6,
@@ -136,11 +106,12 @@ shinyServer(function(input, output, session) {
                                      id = "form",
                                      
                                      textInput("name", labelMandatory("Name"), ""),
-                                     textInput("date", labelMandatory("Today's date"), value = Sys.Date()),
+                                     dateInput("date", "Date:", Sys.Date()),
                                      textInput("weight", labelMandatory("Weight")),
                                      textInput("temp", labelMandatory("Temp")),
-                                     textInput("bpam", labelMandatory("BP-AM")),
-                                     textInput("bppm", labelMandatory("BP-PM")),
+                                     textInput("bpsys", labelMandatory("BP-Systalic")),
+                                     textInput("bpdia", labelMandatory("BP-Diastolic")),
+                                     textInput("bs", labelMandatory("Blood Sugar")),
                                      selectInput("perc", labelMandatory("Solution Dose %"), choices = c("1.5 %", "2.5 %", "4.25 %")),
                                      textInput("meds", "Medication"),
                                      textInput("dose", "Dose"),
@@ -165,10 +136,12 @@ shinyServer(function(input, output, session) {
                                           actionLink("submit_another", "Submit another response")
                                      )
                                 )
-                         ),
-                         column(6,
-                                uiOutput("adminPanelContainer")
-                         )
+                         ))
+                    ),
+                    tabPanel("Admin",
+                             fluidRow(
+                                  uiOutput("adminPanelContainer")
+                             )
                     )
                )
           }
@@ -235,13 +208,15 @@ shinyServer(function(input, output, session) {
                id = "adminPanel",
                h2("Previous responses (only visible to admins)"),
                downloadButton("downloadBtn", "Download responses"), br(), br(),
-               DT::dataTableOutput("responsesTable") 
-          )
+               
+               highcharter::highchartOutput("vis1"),
+               DT::dataTableOutput("responsesTable"))
      })
+     
      
      # determine if current user is admin
      isAdmin <- reactive({
-          is.null(session$user) || session$user %in% adminUsers
+          input$user_name %in% adminUsers
      })    
      
      # Show the responses in the admin table
@@ -251,10 +226,32 @@ shinyServer(function(input, output, session) {
           options = list(searching = FALSE, lengthChange = FALSE)
      )
      
+     output$vis1 <- highcharter::renderHighchart({
+          temp <- loadData()
+          tempData <- temp %>% 
+               select(name, date, bpsys, bpdia) %>%
+               gather(., bp, values, -name, -date) %>% 
+               arrange(date)
+               hchart(tempData, "line", hcaes(x = date, y = values, group = bp),
+                              color = c("#e5b13a", "#4bd5ee")) %>% 
+               hc_title(text = "Blood Pressure history",
+                        useHTML = TRUE) %>% 
+               hc_tooltip(table = TRUE, sort = TRUE) %>% 
+               hc_add_theme(
+                    hc_theme_flatdark(
+                         chart = list(
+                              backgroundColor = "black"
+                         )
+                    )
+               ) %>% 
+               hc_xAxis(gridLineWidth = 0) %>% 
+               hc_yAxis(gridLineWidth = 0)
+     })
+     
      # Allow user to download responses
      output$downloadBtn <- downloadHandler(
           filename = function() { 
-               sprintf("mimic-google-form_%s.csv", humanTime())
+               sprintf(paste0("patient ",input$ptname,"_%s.csv"), humanTime())
           },
           content = function(file) {
                write.csv(loadData(), file, row.names = FALSE)
