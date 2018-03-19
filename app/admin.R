@@ -11,11 +11,11 @@
 #' @examples
 #' credentials_init()
 credentials_init <- function() {
-     if (file.exists("credentials/credentials.rds")) {
+     if (file.exists("app/credentials/credentials.rds")) {
           stop("Credentials file already exists.")
      } else {
-          if (!dir.exists("credentials/")) {
-               dir.create("credentials/")
+          if (!dir.exists("app/credentials/")) {
+               dir.create("app/credentials/")
           }
           
           credentials <- data.frame(user = character(),
@@ -23,7 +23,7 @@ credentials_init <- function() {
                                     locked_out = logical(),
                                     stringsAsFactors = FALSE)
           
-          saveRDS(credentials, "credentials/credentials.rds")
+          saveRDS(credentials, "app/credentials/credentials.rds")
      }
      invisible(TRUE)
 }  
@@ -62,7 +62,7 @@ add_users <- function(users, pws) {
      if (length(users) != length(pws)) stop("You must have the same number of passwords as users.")
      
      # add users
-     credentials <- readRDS("credentials/credentials.rds")
+     credentials <- readRDS("app/credentials/credentials.rds")
      
      if (any(credentials[, "user"] %in% users)) {
           dupe_users <- credentials[which(credentials[, "user"] %in% users), "user"]
@@ -87,7 +87,7 @@ add_users <- function(users, pws) {
           stop("An entry in the credentials data frame is missing a password - please correct.")    
      }
      
-     saveRDS(credentials, "credentials/credentials.rds") 
+     saveRDS(credentials, "app/credentials/credentials.rds") 
      invisible(TRUE)
 }
 
@@ -115,7 +115,7 @@ delete_users <- function(users) {
      }
      
      # delete users
-     credentials <- readRDS("credentials/credentials.rds")
+     credentials <- readRDS("app/credentials/credentials.rds")
      
      if (any(!(users %in% credentials[, "user"]))) {
           bad_users <- users[!(users %in% credentials[, "user"])]
@@ -133,6 +133,6 @@ delete_users <- function(users) {
      
      if (nrow(credentials) == 0) warning("There are now 0 users in the credentials data.")
      
-     saveRDS(credentials, "credentials/credentials.rds")
+     saveRDS(credentials, "app/credentials/credentials.rds")
      invisible(TRUE)
 }
